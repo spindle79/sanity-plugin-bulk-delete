@@ -1,0 +1,24 @@
+node_modules/
+dist/
+.pnpm-store/
+
+# Build artifacts
+*.tsbuildinfo
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local Claude / AI agent settings (per-machine, not portable)
+.claude/settings.local.json
+
+# Env (none currently needed, but reserved)
+.env
+.env.local

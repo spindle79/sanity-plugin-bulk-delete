@@ -1,0 +1,64 @@
+{
+  "name": "sanity-plugin-bulk-delete",
+  "version": "0.1.0",
+  "description": "Sanity Studio tool for selecting many documents at once via a TanStack-Table grid and deleting them in a single transaction. Shows referenced-by relationships before deletion so editors can spot what would be orphaned.",
+  "keywords": [
+    "sanity",
+    "sanity-plugin",
+    "studio",
+    "bulk",
+    "delete",
+    "multi-select",
+    "tanstack-table"
+  ],
+  "license": "MIT",
+  "author": "Adam Harris",
+  "homepage": "https://github.com/spindle79/sanity-plugin-bulk-delete",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spindle79/sanity-plugin-bulk-delete.git"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@tanstack/react-table": "^8.20.0"
+  },
+  "peerDependencies": {
+    "@sanity/icons": "^3",
+    "@sanity/ui": "^2",
+    "react": "^18 || ^19",
+    "sanity": "^3 || ^4"
+  },
+  "devDependencies": {
+    "@sanity/icons": "^3",
+    "@sanity/ui": "^2",
+    "@types/react": "^19",
+    "react": "^19",
+    "sanity": "^4",
+    "tsup": "^8",
+    "typescript": "^5.7"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
