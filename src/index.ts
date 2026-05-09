@@ -2,7 +2,7 @@ import { definePlugin } from "sanity";
 import { DocumentsIcon } from "@sanity/icons";
 import * as React from "react";
 
-import { BulkDeleteToolWithToasts, BulkDeleteTool } from "./BulkDeleteTool";
+import { BulkDeleteToolWithToasts } from "./BulkDeleteTool";
 import type { BulkDeleteOptions } from "./types";
 
 export type { BulkDeleteOptions, SanityDocSummary } from "./types";
