@@ -30,6 +30,12 @@ import {
 } from "@tanstack/react-table";
 
 import type { BulkDeleteOptions, SanityDocSummary } from "./types";
+import {
+  applyFiltersAndSort,
+  filterDocumentTypes,
+  type SortOrder,
+  type StatusFilter,
+} from "./filters";
 
 /**
  * Use the registered Sanity schema to list document types available for
@@ -38,29 +44,24 @@ import type { BulkDeleteOptions, SanityDocSummary } from "./types";
 function useDocumentTypeOptions(options: BulkDeleteOptions) {
   const schema = useSchema();
   return useMemo(() => {
-    const registered = schema.getTypeNames().map((name) => {
-      const t = schema.get(name) as
-        | { name: string; type?: { name?: string }; title?: string }
-        | null
-        | undefined;
-      if (!t || t.type?.name !== "document") return null;
-      return { name: t.name, title: t.title || t.name };
+    const registered = schema
+      .getTypeNames()
+      .map((name) => {
+        const t = schema.get(name) as
+          | { name: string; type?: { name?: string }; title?: string }
+          | null
+          | undefined;
+        if (!t || t.type?.name !== "document") return null;
+        return { name: t.name, title: t.title || t.name };
+      })
+      .filter(
+        (d): d is { name: string; title: string } => d !== null
+      );
+
+    return filterDocumentTypes(registered, {
+      documentTypes: options.documentTypes,
+      hiddenDocumentTypes: options.hiddenDocumentTypes,
     });
-
-    let docTypes = registered.filter(
-      (d): d is { name: string; title: string } => d !== null
-    );
-
-    if (options.documentTypes?.length) {
-      const allow = new Set(options.documentTypes);
-      docTypes = docTypes.filter((d) => allow.has(d.name));
-    }
-    if (options.hiddenDocumentTypes?.length) {
-      const block = new Set(options.hiddenDocumentTypes);
-      docTypes = docTypes.filter((d) => !block.has(d.name));
-    }
-
-    return docTypes.sort((a, b) => a.title.localeCompare(b.title));
   }, [schema, options.documentTypes, options.hiddenDocumentTypes]);
 }
 
@@ -76,12 +77,8 @@ export function BulkDeleteTool({ options }: BulkDeleteToolProps) {
 
   const [docType, setDocType] = useState("");
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<
-    "updatedDesc" | "updatedAsc" | "titleAsc" | "titleDesc"
-  >("updatedDesc");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "draft" | "published"
-  >("all");
+  const [sort, setSort] = useState<SortOrder>("updatedDesc");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [documents, setDocuments] = useState<SanityDocSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -117,38 +114,7 @@ export function BulkDeleteTool({ options }: BulkDeleteToolProps) {
       .fetch<SanityDocSummary[]>(query, { docType })
       .then((docs) => {
         if (cancelled) return;
-
-        let filtered = docs.filter((doc) => {
-          const t = doc.title || doc.internalTitle || "Untitled";
-          const matchesSearch = t
-            .toLowerCase()
-            .includes(search.toLowerCase());
-
-          let matchesStatus = true;
-          if (statusFilter === "draft") {
-            matchesStatus = doc._id.startsWith("drafts.");
-          } else if (statusFilter === "published") {
-            matchesStatus = !doc._id.startsWith("drafts.");
-          }
-
-          return matchesSearch && matchesStatus;
-        });
-
-        filtered = filtered.sort((a, b) => {
-          const titleA = (a.title || a.internalTitle || "").toLowerCase();
-          const titleB = (b.title || b.internalTitle || "").toLowerCase();
-          if (sort === "updatedDesc") {
-            return (b._updatedAt || "").localeCompare(a._updatedAt || "");
-          }
-          if (sort === "updatedAsc") {
-            return (a._updatedAt || "").localeCompare(b._updatedAt || "");
-          }
-          if (sort === "titleAsc") return titleA.localeCompare(titleB);
-          if (sort === "titleDesc") return titleB.localeCompare(titleA);
-          return 0;
-        });
-
-        setDocuments(filtered);
+        setDocuments(applyFiltersAndSort(docs, { search, statusFilter, sort }));
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -408,9 +374,7 @@ export function BulkDeleteTool({ options }: BulkDeleteToolProps) {
             <Select
               value={statusFilter}
               onChange={(e) =>
-                setStatusFilter(
-                  e.currentTarget.value as "all" | "draft" | "published"
-                )
+                setStatusFilter(e.currentTarget.value as StatusFilter)
               }
             >
               <option value="all">All</option>
@@ -424,15 +388,7 @@ export function BulkDeleteTool({ options }: BulkDeleteToolProps) {
             </Text>
             <Select
               value={sort}
-              onChange={(e) =>
-                setSort(
-                  e.currentTarget.value as
-                    | "updatedDesc"
-                    | "updatedAsc"
-                    | "titleAsc"
-                    | "titleDesc"
-                )
-              }
+              onChange={(e) => setSort(e.currentTarget.value as SortOrder)}
             >
               <option value="updatedDesc">Last Updated (desc)</option>
               <option value="updatedAsc">Last Updated (asc)</option>
